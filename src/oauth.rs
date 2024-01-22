@@ -1,16 +1,16 @@
 use oauth2::{
-    basic::BasicClient, AuthUrl, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse, TokenUrl
+    basic::BasicClient, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, TokenResponse, TokenUrl
 };
 use reqwest::{self, Url};
 
 use crate::config::Config;
 
-pub struct D2Client {
+pub struct OAuth {
     client: BasicClient,
     verifier: Option<PkceCodeVerifier>,
 }
 
-impl D2Client {
+impl OAuth {
     pub fn init_oauth_client(config: &Config) -> Self {
         let auth_url = AuthUrl::new("https://www.bungie.net/en/OAuth/Authorize".to_string())
             .expect("Invalid authorization endpoint URL");
@@ -34,18 +34,18 @@ impl D2Client {
     }
 
     // Function to generate the authorization URL
-    pub fn generate_auth_url(&mut self) -> (Url, CsrfToken, PkceCodeChallenge) {
+    pub fn generate_auth_url(&mut self) -> Url {
         let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
 
         self.verifier = Some(pkce_code_verifier);
 
-        let (auth_url, csrf_token) = self
+        let (auth_url, _) = self
             .client
             .authorize_url(CsrfToken::new_random)
             .set_pkce_challenge(pkce_code_challenge.clone())
             .url();
 
-        (auth_url, csrf_token, pkce_code_challenge)
+        auth_url
     }
 
     // Function to exchange the code for an access token
