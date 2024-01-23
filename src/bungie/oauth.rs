@@ -1,5 +1,6 @@
 use oauth2::{
-    basic::BasicClient, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, TokenResponse, TokenUrl
+    basic::BasicClient, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
+    RedirectUrl, TokenResponse, TokenUrl,
 };
 use reqwest::{self, Url};
 
@@ -20,7 +21,7 @@ impl OAuth {
 
         Self {
             client: BasicClient::new(
-                config.client_id.clone(),
+                config.bungie_client_id.clone(),
                 None, // No client secret for public clients
                 auth_url,
                 Some(token_url),
@@ -49,15 +50,14 @@ impl OAuth {
     }
 
     // Function to exchange the code for an access token
-    pub async fn exchange_code(
-        self,
-        code: AuthorizationCode,
-    ) -> Result<String, reqwest::Error> {
-        let token = self.client
+    pub async fn exchange_code(self, code: AuthorizationCode) -> Result<String, reqwest::Error> {
+        let token = self
+            .client
             .exchange_code(code)
             .set_pkce_verifier(self.verifier.unwrap())
             .request_async(oauth2::reqwest::async_http_client)
-            .await.unwrap();
+            .await
+            .unwrap();
 
         Ok(token.access_token().secret().clone())
     }

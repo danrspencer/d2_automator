@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./workspace/d2_automator/Cargo.toml"
+    ]
+}

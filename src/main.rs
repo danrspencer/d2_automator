@@ -1,44 +1,69 @@
+mod bungie;
 mod config;
-mod oauth;
-mod api;
+mod dim;
 
 use oauth2::AuthorizationCode;
 
-use crate::config::Config;
-use crate::oauth::OAuth;
-use std::io::{self, Write};
-
-const access_token: &str = "";
+use crate::{bungie::oauth::OAuth, config::Config};
+use std::{
+    io::{self},
+    mem,
+};
 
 #[tokio::main]
 async fn main() {
     // Initialize configuration
     let config = Config::new();
 
-    api::call_destiny_api(&access_token, &config.api_key).await.unwrap();
-    return;
+    let token = match std::fs::read_to_string("token.txt") {
+        Ok(token) => Some(token),
+        Err(err) => {
+            println!("Error reading token from file: {}", err);
 
+            // Initialize OAuth2 client
+            let mut client = OAuth::init_oauth_client(&config);
 
-    // Initialize OAuth2 client
-    let mut client = OAuth::init_oauth_client(&config);
+            // Generate the authorization URL
+            let auth_url = client.generate_auth_url();
+            println!("Please go to this URL and authorize the application:");
+            println!("{}", auth_url);
 
-    // Generate the authorization URL
-    let auth_url = client.generate_auth_url();
-    println!("Please go to this URL and authorize the application:");
-    println!("{}", auth_url);
+            // Prompt for the authorization code
+            println!("Enter the authorization code:");
+            let mut code = String::new();
+            io::stdin().read_line(&mut code).unwrap();
+            let code = code.trim();
 
-    // Prompt for the authorization code
-    println!("Enter the authorization code:");
-    let mut code = String::new();
-    io::stdin().read_line(&mut code).unwrap();
-    let code = code.trim();
+            match client
+                .exchange_code(AuthorizationCode::new(code.to_string()))
+                .await
+            {
+                Ok(token) => {
+                    println!("Access token: {}", token);
 
-    // Exchange the code for an access token
-    match client.exchange_code(AuthorizationCode::new(code.to_string())).await {
-        Ok(token) => {
-            println!("Access token: {}", token);
-            api::call_destiny_api(&token, &config.api_key).await.unwrap();
-        },
-        Err(e) => eprintln!("Error exchanging code: {}", e),
+                    // write token to file
+                    std::fs::write("token.txt", token.clone()).unwrap();
+
+                    Some(token)
+                }
+                Err(e) => {
+                    eprintln!("Error exchanging code: {}", e);
+                    None
+                }
+            }
+        }
     }
+    .unwrap();
+
+    let response = bungie::call_destiny_api(&token, &config.bungie_api_key)
+        .await
+        .unwrap();
+
+    let membership_id = response.response.primary_membership_id;
+    println!("Membership ID: {}", membership_id);
+
+    let dim_token = dim::get_dim_token(&token, &membership_id, &config.dim_api_key)
+        .await
+        .unwrap();
+    println!("DIM token: {}", dim_token);
 }
