@@ -1,5 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./workspace/d2_automator/Cargo.toml"
-    ]
+        "Cargo.toml"
+    ],
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
 }
