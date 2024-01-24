@@ -1,0 +1,17 @@
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--write-mode=overwrite"]
+
+[tasks.build]
+dependencies = ["wasm-pack-build", "npm-install"]
+
+[tasks.wasm-pack-build]
+install_crate = "wasm-pack"
+command = "wasm-pack"
+args = ["build", "--target", "web", "--out-dir", "pkg"]
+
+[tasks.npm-install]
+cwd = "www"
+command = "npm"
+args = ["install"]

@@ -10,12 +10,15 @@ use std::{
     mem,
 };
 
+const D2_TOKEN_FILE = "d2_token.txt";
+const DIM_TOKEN_FILE = "dim_token.txt";
+
 #[tokio::main]
 async fn main() {
     // Initialize configuration
     let config = Config::new();
 
-    let token = match std::fs::read_to_string("token.txt") {
+    let token = match std::fs::read_to_string(D2_TOKEN_FILE) {
         Ok(token) => Some(token),
         Err(err) => {
             println!("Error reading token from file: {}", err);
@@ -42,7 +45,7 @@ async fn main() {
                     println!("Access token: {}", token);
 
                     // write token to file
-                    std::fs::write("token.txt", token.clone()).unwrap();
+                    std::fs::write(D2_TOKEN_FILE, token.clone()).unwrap();
 
                     Some(token)
                 }
@@ -59,11 +62,13 @@ async fn main() {
         .await
         .unwrap();
 
-    let membership_id = response.response.primary_membership_id;
+    let membership_id = response.response.bungie_net_user.membership_id;
     println!("Membership ID: {}", membership_id);
 
     let dim_token = dim::get_dim_token(&token, &membership_id, &config.dim_api_key)
         .await
         .unwrap();
     println!("DIM token: {}", dim_token);
+
+    std::fs::write(DIM_TOKEN_FILE, token.clone()).unwrap();
 }

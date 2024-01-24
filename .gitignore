@@ -1,3 +1,8 @@
 /target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+wasm-pack.log
 
-token.txt
+wasm-game-of-life
