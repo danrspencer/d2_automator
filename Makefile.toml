@@ -1,10 +1,11 @@
+[tasks.build]
+dependencies = ["wasm-pack-build", "npm-install"]
+watch = { ignore_pattern = "www/**/*" }
+
 [tasks.format]
 install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--", "--write-mode=overwrite"]
-
-[tasks.build]
-dependencies = ["wasm-pack-build", "npm-install"]
 
 [tasks.wasm-pack-build]
 install_crate = "wasm-pack"
@@ -15,3 +16,9 @@ args = ["build"]
 cwd = "www"
 command = "npm"
 args = ["install"]
+
+[tasks.npm-run]
+cwd = "www"
+command = "npm"
+args = ["run", "start"]
+env = { "NODE_OPTIONS" = "--openssl-legacy-provider" }
