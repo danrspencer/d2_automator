@@ -17,7 +17,7 @@ cwd = "www"
 command = "npm"
 args = ["install"]
 
-[tasks.npm-run]
+[tasks.start]
 cwd = "www"
 command = "npm"
 args = ["run", "start"]
