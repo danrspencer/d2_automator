@@ -4,8 +4,10 @@ mod dim;
 mod utils;
 
 use js_sys::Promise;
-use oauth2::AuthorizationCode;
-use reqwest::Url;
+use oauth2::{
+    basic::BasicClient, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
+    RedirectUrl, TokenResponse, TokenUrl,
+};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -16,38 +18,47 @@ extern "C" {
     fn alert(s: &str);
 }
 
+const PKCE_CODE_VERIFIER_KEY: &str = "pkce_code_verifier";
+
 #[wasm_bindgen]
 pub fn greet() -> Promise {
     future_to_promise(async move {
         let config = Config::new();
+        let window = web_sys::window().unwrap();
+        let session_storage = window.session_storage().unwrap().unwrap();
 
-        let mut client = OAuth::init_oauth_client(&config);
+        let href = window.location().href().unwrap();
+        let verifier = session_storage
+            .get_item(PKCE_CODE_VERIFIER_KEY)
+            .unwrap()
+            .map(|verifier| PkceCodeVerifier::new(verifier));
+        let client = OAuth::init_oauth_client(&config, verifier, href);
 
-        // get the url via web_sys
-        let href = web_sys::window().unwrap().location().href().unwrap();
-        let url = Url::parse(href.as_str()).unwrap();
-        if let Some(code) = url
-            .query_pairs()
-            .find(|(key, _)| key == "code")
-            .map(|(_, value)| value.to_string())
-        {
-            let code = AuthorizationCode::new(code.to_string());
-            let token = client.exchange_code(code).await.unwrap();
-
-            alert(format!("Access token: {}", token).as_str());
-        } else {
-            let auth_url = client.generate_auth_url();
-
-            web_sys::window()
-                .unwrap()
-                .open_with_url_and_target(auth_url.as_str(), "_self")
-                .unwrap();
+        let d2_token = match client {
+            OAuth::RedirectToAuthUrl(auth_url, verifier) => {
+                session_storage
+                    .set_item(PKCE_CODE_VERIFIER_KEY, verifier.secret())
+                    .unwrap();
+                window
+                    .open_with_url_and_target(auth_url.as_str(), "_self")
+                    .unwrap();
+                return Ok(JsValue::UNDEFINED);
+            }
+            OAuth::ExchangeCodeForToken(client, verifier, code) => {
+                OAuth::exchange_code(client, verifier, code).await
+            }
         }
+        .unwrap();
+
+        let response = bungie::call_destiny_api(&d2_token, &config.bungie_api_key)
+            .await
+            .unwrap();
+
+        let membership_id = response.response.bungie_net_user.membership_id;
+        let dim_token = dim::get_dim_token(&d2_token, &membership_id, &config.dim_api_key).await;
+
+        alert(&format!("DIM token: {:?}", dim_token));
 
         Ok(JsValue::UNDEFINED)
     })
-
-    // .set_href(auth_url.as_str())
-    // .unwrap();
-    // alert(format!("Hello, {}", auth_url).as_str());
 }

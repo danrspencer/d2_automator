@@ -1,5 +1,8 @@
 [tasks.build]
 dependencies = ["wasm-pack-build", "npm-install"]
+
+[tasks.watch]
+dependencies = ["wasm-pack-build", "npm-install"]
 watch = { ignore_pattern = "www/**/*" }
 
 [tasks.format]
@@ -7,6 +10,7 @@ install_crate = "rustfmt"
 command = "cargo"
 args = ["fmt", "--", "--write-mode=overwrite"]
 
+# TODO - Add a prod build task
 [tasks.wasm-pack-build]
 install_crate = "wasm-pack"
 command = "wasm-pack"
