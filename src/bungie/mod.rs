@@ -2,14 +2,19 @@ mod model;
 pub mod oauth;
 
 use reqwest;
+use serde::{de::DeserializeOwned, Deserialize};
 use std::error::Error;
 
-pub async fn call_destiny_api(
+trait EndPoint {
+    fn get_url() -> String;
+}
+
+pub async fn call_destiny_api<T: DeserializeOwned + EndPoint>(
     access_token: &str,
     api_key: &str,
-) -> Result<model::Response, Box<dyn Error>> {
+) -> Result<model::Response<T>, Box<dyn Error>> {
     let client = reqwest::Client::new();
-    let url = "https://www.bungie.net/Platform/User/GetMembershipsForCurrentUser/"; // Replace with the actual endpoint
+    let url = format!("https://www.bungie.net/Platform/User/{}/", T::get_url()); // Replace with the actual endpoint
 
     let response = client
         .get(url)
@@ -23,7 +28,7 @@ pub async fn call_destiny_api(
         println!("Response: {}", response_text);
 
         // deserialize the response
-        Ok(serde_json::from_str::<model::Response>(&response_text).unwrap())
+        Ok(serde_json::from_str::<model::Response<T>>(&response_text).unwrap())
     } else {
         eprintln!("Error: {:?}", response.status());
         unimplemented!()

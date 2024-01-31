@@ -21,7 +21,7 @@ extern "C" {
 const PKCE_CODE_VERIFIER_KEY: &str = "pkce_code_verifier";
 
 #[wasm_bindgen]
-pub fn greet() -> Promise {
+pub fn main() -> Promise {
     future_to_promise(async move {
         let config = Config::new();
         let window = web_sys::window().unwrap();
@@ -38,9 +38,7 @@ pub fn greet() -> Promise {
             OAuth::RedirectToAuthUrl(auth_url, verifier) => {
                 session_storage
                     .set_item(PKCE_CODE_VERIFIER_KEY, verifier.secret())
-                    .unwrap();
-                window
-                    .open_with_url_and_target(auth_url.as_str(), "_self")
+                    .and_then(|_| window.open_with_url_and_target(auth_url.as_str(), "_self"))
                     .unwrap();
                 return Ok(JsValue::UNDEFINED);
             }
@@ -55,9 +53,11 @@ pub fn greet() -> Promise {
             .unwrap();
 
         let membership_id = response.response.bungie_net_user.membership_id;
-        let dim_token = dim::get_dim_token(&d2_token, &membership_id, &config.dim_api_key).await;
+        let dim_token = dim::get_dim_token(&d2_token, &membership_id, &config.dim_api_key)
+            .await
+            .unwrap();
 
-        alert(&format!("DIM token: {:?}", dim_token));
+        // TODO - deal with token expiration
 
         Ok(JsValue::UNDEFINED)
     })
