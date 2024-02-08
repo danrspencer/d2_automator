@@ -1,11 +1,11 @@
-mod model;
+pub mod model;
 pub mod oauth;
 
 use reqwest;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::error::Error;
 
-trait EndPoint {
+pub trait EndPoint {
     fn get_url() -> String;
 }
 

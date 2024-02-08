@@ -1,4 +1,3 @@
-use crate::bungie::model::user_membership_data::UserMembershipData;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]

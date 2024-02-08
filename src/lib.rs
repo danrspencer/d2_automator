@@ -3,6 +3,7 @@ mod config;
 mod dim;
 mod utils;
 
+use bungie::model::UserMembershipData;
 use js_sys::Promise;
 use oauth2::{
     basic::BasicClient, AuthUrl, AuthorizationCode, CsrfToken, PkceCodeChallenge, PkceCodeVerifier,
@@ -48,9 +49,10 @@ pub fn main() -> Promise {
         }
         .unwrap();
 
-        let response = bungie::call_destiny_api(&d2_token, &config.bungie_api_key)
-            .await
-            .unwrap();
+        let response =
+            bungie::call_destiny_api::<UserMembershipData>(&d2_token, &config.bungie_api_key)
+                .await
+                .unwrap();
 
         let membership_id = response.response.bungie_net_user.membership_id;
         let dim_token = dim::get_dim_token(&d2_token, &membership_id, &config.dim_api_key)
